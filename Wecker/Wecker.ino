@@ -12,6 +12,8 @@ const char topic[]  = "wecker/weckzeit";
 
 //Wecker-Attribute
 String weckzeit;
+String uhrzeit;
+bool alarm = false;
 
 
 void setup() {
