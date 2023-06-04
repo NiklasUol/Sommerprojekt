@@ -18,7 +18,8 @@ int        port     = 1883;
 const char topic[]  = "wecker/weckzeit";
 
 //Wecker-Attribute
-String weckzeit;
+int weckminute = 0;
+int weckstunde = 0;
 bool alarm = false;
 
 void updateTimeClient();
@@ -85,7 +86,9 @@ void onMqttMessage(int messageSize) {
 
   if(receivedTopic.equals("wecker/weckzeit")){
     Serial.println("Weckzeit " + nachricht + " gespeichert!");
-    weckzeit = nachricht;
+    int deviderIndex = nachricht.indexOf(':');
+    weckstunde = nachricht.substring(0, deviderIndex).toInt();
+    weckminute = nachricht.substring(deviderIndex + 1).toInt();
   }
 
   //Sendet Empfangsbestaetigung zurueck
