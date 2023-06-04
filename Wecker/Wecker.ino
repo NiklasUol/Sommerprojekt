@@ -1,8 +1,15 @@
 #include <WiFiManager.h>
 #include <ArduinoMqttClient.h>
 
+#include <WiFiUdp.h>
+#include <NTPClient.h>
+
 WiFiManager wifiManager;
 WiFiClient client;
+
+//Fuer Zeitabruf
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP);
 
 //Mqtt Settings
 MqttClient mqttClient(client);
@@ -12,21 +19,29 @@ const char topic[]  = "wecker/weckzeit";
 
 //Wecker-Attribute
 String weckzeit;
-String uhrzeit;
 bool alarm = false;
 
+void updateTimeClient();
 
 void setup() {
   Serial.begin(115200);  
    wifiManager.autoConnect("Wemos_D1");
 
    mqttSetup();
-  mqttSubscribe(topic);
+   mqttSubscribe(topic);
+
+   timeClient.begin();
+   timeClient.setTimeOffset(7200);
+   updateTimeClient();
 }
+
+
 
 void loop() {
   mqttClient.poll();
 }
+
+
 
 void mqttSetup(){
   Serial.print("Versuche mit folgendem MQTT-Broker zu verbinden: ");
@@ -82,4 +97,25 @@ void sendMqttMessage(const char sendTopic[], String message){
   mqttClient.beginMessage(sendTopic);
   mqttClient.print(message);
   mqttClient.endMessage();
+}
+
+//Laedt die Zeit von einem Zeitserver herunter
+//Muss nicht bei jedem Zeitabruf verwendet werden, da die Zeit auch so weiterlaeuft 
+//(Stattdessen z.B. timeClient.getHours())
+void updateTimeClient(){
+  int i = 0;
+  while(!timeClient.update() || i >= 10){
+  Serial.println("Lade Zeit...");
+  delay(200);
+  i++;
+  }
+  if(i >= 10){
+    Serial.println("Zeitabruf fehlgeschlagen!");
+    return;
+  }
+   Serial.println("Zeit geladen!");
+   Serial.print("Stunde: ");
+   Serial.print(timeClient.getHours());
+   Serial.print(", Minute: ");
+   Serial.println(timeClient.getMinutes());
 }
