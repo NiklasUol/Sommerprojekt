@@ -33,13 +33,15 @@ void setup() {
 
    timeClient.begin();
    timeClient.setTimeOffset(7200);
+   timeClient.setUpdateInterval(86400000); //Zeit wird alle 24h neu geladen
    updateTimeClient();
 }
 
 
 
 void loop() {
-  mqttClient.poll();
+  mqttClient.poll(); //Haelt die MQTT Verbindung aufrecht 
+  updateTimeClient(); //Laedt die Zeit regelmaeßig vom Server
 }
 
 
@@ -69,6 +71,8 @@ void mqttSubscribe(const char topic[]){
 
 //Ausgabe der empfangenden Nachricht und Speicherung der Weckzeit
 void onMqttMessage(int messageSize) {
+  Serial.print("Uhrzeit: ");
+  Serial.println(timeClient.getFormattedTime());
   Serial.println("Nachricht mit folgendem Topic erhalten: '");
   String receivedTopic = mqttClient.messageTopic();
   Serial.print(receivedTopic);
@@ -106,19 +110,12 @@ void sendMqttMessage(const char sendTopic[], String message){
 //Muss nicht bei jedem Zeitabruf verwendet werden, da die Zeit auch so weiterlaeuft 
 //(Stattdessen z.B. timeClient.getHours())
 void updateTimeClient(){
-  int i = 0;
-  while(!timeClient.update() || i >= 10){
-  Serial.println("Lade Zeit...");
-  delay(200);
-  i++;
+  if(timeClient.update()){
+    Serial.println("Zeit geladen!");
+    Serial.print("Stunde: ");
+    Serial.print(timeClient.getHours());
+    Serial.print(", Minute: ");
+    Serial.println(timeClient.getMinutes());
+    Serial.println();
   }
-  if(i >= 10){
-    Serial.println("Zeitabruf fehlgeschlagen!");
-    return;
-  }
-   Serial.println("Zeit geladen!");
-   Serial.print("Stunde: ");
-   Serial.print(timeClient.getHours());
-   Serial.print(", Minute: ");
-   Serial.println(timeClient.getMinutes());
 }
