@@ -12,8 +12,10 @@ int        port     = 1883;
 const char topic[]  = "wecker/stopalarm";
 
 void setup() {
-  mqttSetup();
   Serial.begin(115200);
+  Serial.setTimeout(10);
+  wifiManager.autoConnect("Wemos_D1");
+  mqttSetup();
 }
 
 void mqttSetup(){
@@ -33,8 +35,10 @@ void mqttSetup(){
 }
 void loop() {
   mqttClient.poll();
-  if(Serial.readString().equals("Stop")){
+  if(Serial.available() > 0 ){
     sendSignal();
+    Serial.print("Signal gesendet.");
+    Serial.print(Serial.readString());
   }
 }
 
