@@ -119,3 +119,9 @@ void updateTimeClient(){
     Serial.println();
   }
 }
+void alarmA(){
+  if(timeClient.getHours() == weckstunde && timeClient.getMinutes() == weckminute){
+  alarm = true;
+  }
+}
+
