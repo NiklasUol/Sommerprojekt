@@ -36,6 +36,8 @@ public class MainActivity extends AppCompatActivity {
 
     private SharedPreferences preferences;
 
+    private Thread responseThread;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -138,18 +140,22 @@ public class MainActivity extends AppCompatActivity {
         connectMqtt();
         publish(topic, message);
         subscribe("wecker/weckzeitresponse");
-        new ResponseThread(waitForResponse).start();
-        //Log.e("Client connected: ", String.valueOf(client.isConnected()));
+        if(responseThread != null){
+            responseThread.interrupt();
+        }
+        responseThread = new ResponseThread();
+        responseThread.start();
     }
 
-    Runnable waitForResponse = new Runnable() {
-        @Override
-        public void run() {
+
+    private class ResponseThread extends Thread{
+        public void run()
+        {
             Looper.prepare();
             Log.e("Thread", "Thread working...");
-            for(int i = 0; i < 3000; i++){
+            for(int i = 0; i < 30; i++){
                 try {
-                    Thread.currentThread().sleep(1);
+                    Thread.sleep(100);
                     if(newMessage){
                         Toast.makeText(appContext, "Weckzeit erfolgreich gesendet!", Toast.LENGTH_SHORT).show();
                         newMessage = false;
@@ -161,18 +167,17 @@ public class MainActivity extends AppCompatActivity {
                         editor.putInt("hour", timePicker.getHour());
                         editor.putInt("minute", timePicker.getMinute());
                         editor.commit();
-                        break;
+                        Log.e("Thread", "Thread stopped");
+                        return;
                     }
                 } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-                if(i == 2999){
-                    Toast.makeText(appContext, "Weckzeit konnte nicht gesendet werden!", Toast.LENGTH_SHORT).show();
-                    statusfeld.setText("Wecker ist nicht erreichbar");
-                    statusfeld.setTextColor(Color.RED);
+                    Log.e("Thread", "Thread stopped");
+                    return;
                 }
             }
+            Toast.makeText(appContext, "Weckzeit konnte nicht gesendet werden!", Toast.LENGTH_SHORT).show();
+            statusfeld.setText("Wecker ist nicht erreichbar");
             Log.e("Thread", "Thread stopped");
         }
-    };
+    }
 }
