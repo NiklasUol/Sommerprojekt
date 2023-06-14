@@ -22,9 +22,9 @@ int weckminute = 0;
 int weckstunde = 0;
 bool alarm = false;
 
-//Pins
-const int knopf = D5;
-const int buzzer = D6;
+//Pins (GPIO Nummern entsprechen nicht Anschluessen)
+const int knopf = 14; //D5
+const int buzzer = 12; //D6
 
 void updateTimeClient();
 
@@ -40,8 +40,8 @@ void setup() {
   timeClient.setUpdateInterval(86400000);  //Zeit wird alle 24h neu geladen
   updateTimeClient();
 
-  //pinMode(knopf, INPUT);
-  //pinMode(buzzer, OUTPUT);
+  pinMode(knopf, INPUT);
+  pinMode(buzzer, OUTPUT);
 }
 
 
@@ -147,11 +147,11 @@ void startAlarm() {
     alarm = true;
     Serial.println("Alarm gestartet...");
     while (alarm) {
-      //tone(buzzer, 300);
+      tone(buzzer, 300);
       delay(200);
-      //noTone(buzzer);
+      noTone(buzzer);
       delay(200);
-      //display(timeClient.getHours(), timeClient.getMinutes());
+      display(timeClient.getHours(), timeClient.getMinutes());
     }
   }
 }
