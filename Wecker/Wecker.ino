@@ -23,7 +23,7 @@ int weckstunde = 0;
 bool alarm = false;
 
 //Pins (GPIO Nummern entsprechen nicht Anschluessen)
-const int buzzer = 12; //D6
+const int buzzer = 14; //D6
 
 void updateTimeClient();
 
@@ -40,6 +40,7 @@ void setup() {
   updateTimeClient();
 
   pinMode(buzzer, OUTPUT);
+  digitalWrite(buzzer,LOW);
 }
 
 
@@ -145,10 +146,13 @@ void startAlarm() {
     alarm = true;
     Serial.println("Alarm gestartet...");
     while (alarm) {
-      tone(buzzer, 300);
-      delay(200);
+      Serial.println("Alarm");
+      //digitalWrite(buzzer,HIGH);
+      tone(buzzer,700);
+      delay(400);
+      //digitalWrite(buzzer,LOW);
       noTone(buzzer);
-      delay(200);
+      delay(400);
       display(timeClient.getHours(), timeClient.getMinutes());
     }
   }
