@@ -23,14 +23,13 @@ int weckstunde = 0;
 bool alarm = false;
 
 //Pins (GPIO Nummern entsprechen nicht Anschluessen)
-const int knopf = 14; //D5
 const int buzzer = 12; //D6
 
 void updateTimeClient();
 
 void setup() {
   Serial.begin(115200);
-  wifiManager.autoConnect("Wemos_D1");
+  wifiManager.autoConnect("Wecker");
 
   mqttSetup();
   mqttSubscribe(topic);
@@ -40,7 +39,6 @@ void setup() {
   timeClient.setUpdateInterval(86400000);  //Zeit wird alle 24h neu geladen
   updateTimeClient();
 
-  pinMode(knopf, INPUT);
   pinMode(buzzer, OUTPUT);
 }
 
@@ -108,7 +106,7 @@ void onMqttMessage(int messageSize) {
     sendMqttMessage(sendTopic, "Daten erhalten!");
   }
   
-  //TODO: Hier alarm auf false setzten, wenn das Topic der Nachricht "wecker/stopalarm" ist
+  //TODO: Hier alarm auf false setzten, wenn das Topic der Nachricht "wecker/stopAlarm" ist
   /*
   .....
   */

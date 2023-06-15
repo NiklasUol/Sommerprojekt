@@ -9,13 +9,17 @@ WiFiClient client;
 MqttClient mqttClient(client);
 const char broker[] = "broker.hivemq.com";
 int        port     = 1883;
-const char topic[]  = "wecker/stopalarm";
+const char topic[]  = "wecker/stopAlarm";
+
+const int knopf = 14; //D5
 
 void setup() {
   Serial.begin(115200);
   Serial.setTimeout(10);
-  wifiManager.autoConnect("Wemos_D1");
+  wifiManager.autoConnect("Aus-Knopf");
   mqttSetup();
+
+  pinMode(knopf, INPUT);
 }
 
 void mqttSetup(){
@@ -35,10 +39,13 @@ void mqttSetup(){
 }
 void loop() {
   mqttClient.poll();
-  if(Serial.available() > 0 ){
+  
+  //if(Serial.available() > 0 ){   //Zum Testen in der Konsole
+  if(digitalRead(knopf) == HIGH){
     sendSignal();
     Serial.print("Signal gesendet.");
     Serial.print(Serial.readString());
+    delay(1500);
   }
 }
 
