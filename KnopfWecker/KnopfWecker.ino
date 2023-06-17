@@ -8,6 +8,7 @@ WiFiClient client;
 //MQTT Settings
 MqttClient mqttClient(client);
 const char broker[] = "broker.hivemq.com";
+//const char broker[] = "public.mqtthq.com";
 int        port     = 1883;
 const char topic[]  = "wecker/stopAlarm";
 
