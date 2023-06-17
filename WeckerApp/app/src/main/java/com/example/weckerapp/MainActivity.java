@@ -1,10 +1,9 @@
 package com.example.weckerapp;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.app.Application;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -13,6 +12,7 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
@@ -28,15 +28,17 @@ public class MainActivity extends AppCompatActivity {
 
     private Context appContext;
     private MqttClient client;
-    private static final String BROKER_URL = "tcp://broker.hivemq.com:1883";
-    private static final String CLIENT_ID = "Smartphone";
+    public static String brokerURL = "tcp://broker.hivemq.com:1883";
+    public static String clientId = "Smartphone";
 
-    private TextView statusfeld;
+    public static TextView statusfeld;
     private TimePicker timePicker;
 
     private SharedPreferences preferences;
 
     private Thread responseThread;
+    private Thread mqttConnectThread;
+    public static Boolean newMessage = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,7 +46,9 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         appContext = getApplicationContext();
+
         preferences  = PreferenceManager.getDefaultSharedPreferences(appContext);
+        brokerURL = preferences.getString("broker", brokerURL);
 
         timePicker = (TimePicker) findViewById(R.id.timePicker);
         timePicker.setIs24HourView(true);
@@ -59,6 +63,8 @@ public class MainActivity extends AppCompatActivity {
         statusfeld.setText("Warte auf Eingabe");
         statusfeld.setTextColor(Color.DKGRAY);
 
+        connectMqtt("wecker/weckzeitresponse");
+
         Button button = (Button) findViewById(R.id.button);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -68,7 +74,15 @@ public class MainActivity extends AppCompatActivity {
                 sendSignal("wecker/weckzeit", stunde + ":" + minute);
             }
         });
-        subscribe("wecker/weckzeitresponse");
+
+        ImageButton settingsButton = (ImageButton) findViewById(R.id.settingsButton);
+        settingsButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(appContext, SettingsActivity.class);
+                startActivity(intent);
+            }
+        });
     }
 
     @Override
@@ -77,19 +91,29 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
     }
 
-    private void connectMqtt(){
+    @Override
+    public void onResume() {
+        connectMqtt("wecker/weckzeitresponse");
+        super.onResume();
+    }
+
+    private void connectMqtt(String topic){
+        statusfeld.setTextColor(Color.DKGRAY);
+        statusfeld.setText("Wird verbunden...");
+
         MemoryPersistence persistence = new MemoryPersistence();
         try {
-            client = new MqttClient(BROKER_URL, CLIENT_ID, persistence);
-
-            MqttConnectOptions connectOptions = new MqttConnectOptions();
-            connectOptions.setCleanSession(true);
-
-            //Connect to the broker
-            client.connect(connectOptions);
+            if(mqttConnectThread == null){
+                client = new MqttClient(brokerURL, clientId, persistence);
+                mqttConnectThread = new MqttConnectThread(client, topic);
+            }
+            if(!mqttConnectThread.isAlive()){
+                client = new MqttClient(brokerURL, clientId, persistence);
+                mqttConnectThread = new MqttConnectThread(client, topic);
+                mqttConnectThread.start();
+            }
         } catch (MqttException e) {
             System.err.println(e.getMessage());
-            System.err.println(e.getCause());
         }
     }
 
@@ -104,42 +128,29 @@ public class MainActivity extends AppCompatActivity {
     private void publish(String topic, String message) {
         try {
             MqttMessage mqttMessage = new MqttMessage(message.getBytes());
-            client.publish(topic, mqttMessage);
+            if(client.isConnected()){
+                client.publish(topic, mqttMessage);
+            }
+            else {
+                statusfeld.setTextColor(Color.RED);
+                statusfeld.setText("Keine Verbindung zum MQTT-Broker");
+                Toast.makeText(appContext, "Keine Verbindung zum MQTT-Broker", Toast.LENGTH_LONG).show();
+            }
         } catch (MqttException e) {
             e.printStackTrace();
         }
     }
 
-    private void subscribe(String topic) {
-        if(client == null){
-            connectMqtt();
-        }
-        try {
-            client.subscribe(topic, new IMqttMessageListener() {
-                @Override
-                public void messageArrived(String topic, MqttMessage message) throws Exception {
-                    byte[] byteMessage = message.getPayload();
-                    String stringMessage = new String(byteMessage);
 
-                    Log.e("Mqtt message", stringMessage);
-                    newMessage = true;
-
-                    client.messageArrivedComplete(message.getId(), message.getQos());
-                    Log.e("Client connected:", String.valueOf(client.isConnected()));
-                }
-            });
-        } catch (MqttException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private boolean newMessage = false;
     private void sendSignal(String topic, String message){
+        if(!client.isConnected()){
+            Toast.makeText(appContext, "Keine Verbindung zum MQTT-Broker", Toast.LENGTH_LONG).show();
+            return;
+        }
         statusfeld.setText("Wird gesendet...");
         statusfeld.setTextColor(Color.DKGRAY);
-        connectMqtt();
         publish(topic, message);
-        subscribe("wecker/weckzeitresponse");
+        //subscribe("wecker/weckzeitresponse");
         if(responseThread != null){
             responseThread.interrupt();
         }
