@@ -14,8 +14,11 @@ NTPClient timeClient(ntpUDP);
 //Mqtt Settings
 MqttClient mqttClient(client);
 const char broker[] = "broker.hivemq.com";
+//const char broker[] = "public.mqtthq.com";
+
 int port = 1883;
-const char topic[] = "wecker/weckzeit";
+const char topicWeckzeit[] = "wecker/weckzeit";
+const char topicStopAlarm[] = "wecker/stopAlarm";
 
 //Wecker-Attribute
 int weckminute = 0;
@@ -23,7 +26,7 @@ int weckstunde = 0;
 bool alarm = false;
 
 //Pins (GPIO Nummern entsprechen nicht Anschluessen)
-const int buzzer = 14; //D6
+const int buzzer = 14; //D5
 
 void updateTimeClient();
 
@@ -32,7 +35,8 @@ void setup() {
   wifiManager.autoConnect("Wecker");
 
   mqttSetup();
-  mqttSubscribe(topic);
+  mqttSubscribe(topicWeckzeit);
+  mqttSubscribe(topicStopAlarm);
 
   timeClient.begin();
   timeClient.setTimeOffset(7200);
@@ -41,6 +45,8 @@ void setup() {
 
   pinMode(buzzer, OUTPUT);
   digitalWrite(buzzer,LOW);
+
+  tone(buzzer, 700, 500);
 }
 
 
@@ -57,12 +63,10 @@ void mqttSetup() {
   Serial.print("Versuche mit folgendem MQTT-Broker zu verbinden: ");
   Serial.println(broker);
 
-  if (!mqttClient.connect(broker, port)) {
+  while (!mqttClient.connect(broker, port)) {
     Serial.print("MQTT Verbindung fehlgeschlagen! Error: ");
     Serial.println(mqttClient.connectError());
-
-    while (1)
-      ;
+    delay(2000);
   }
 
   Serial.println("Erfolgreich verbunden!");
@@ -96,7 +100,7 @@ void onMqttMessage(int messageSize) {
   Serial.println(nachricht);
   Serial.println();
 
-  if (receivedTopic.equals("wecker/weckzeit")) {
+  if (receivedTopic.equals(topicWeckzeit)) {
     Serial.println("Weckzeit " + nachricht + " gespeichert!");
     int deviderIndex = nachricht.indexOf(':');
     weckstunde = nachricht.substring(0, deviderIndex).toInt();
@@ -105,14 +109,14 @@ void onMqttMessage(int messageSize) {
     //Sendet Empfangsbestaetigung an Smartphone zurueck
     const char sendTopic[] = "wecker/weckzeitresponse";
     sendMqttMessage(sendTopic, "Daten erhalten!");
+    for(int i = 0; i < 30; i++){
+      tone(buzzer, 300 + (20 * i), 100);
+    }
   }
-  
-  //TODO: Hier alarm auf false setzten, wenn das Topic der Nachricht "wecker/stopAlarm" ist
-  /*
-  .....
-  */
-
-
+  if (receivedTopic.equals(topicStopAlarm)) {
+    alarm = false;
+    Serial.println("Alarm gestopp!");
+  }
 }
 
 void sendMqttMessage(const char sendTopic[], String message) {
@@ -141,19 +145,27 @@ void display(int hours, int minutes) {
 }
 
 
+bool alarmDone = false;
+
 void startAlarm() {
-  if (timeClient.getHours() == weckstunde && timeClient.getMinutes() == weckminute) {
+  if (timeClient.getHours() == weckstunde && timeClient.getMinutes() == weckminute && !alarmDone) {
     alarm = true;
     Serial.println("Alarm gestartet...");
     while (alarm) {
       Serial.println("Alarm");
-      //digitalWrite(buzzer,HIGH);
       tone(buzzer,700);
       delay(400);
-      //digitalWrite(buzzer,LOW);
       noTone(buzzer);
       delay(400);
+
       display(timeClient.getHours(), timeClient.getMinutes());
+      mqttClient.poll();
     }
+    alarmDone = true;
+  }
+  
+  //Verhindert erneute Auslösung des Alarms
+  else if (!(timeClient.getHours() == weckstunde && timeClient.getMinutes() == weckminute) && alarmDone) {
+    alarmDone = false;
   }
 }
