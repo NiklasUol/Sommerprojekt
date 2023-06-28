@@ -4,6 +4,8 @@
 #include <WiFiUdp.h>
 #include <NTPClient.h>
 
+#include <TM1637Display.h>
+
 WiFiManager wifiManager;
 WiFiClient client;
 
@@ -27,6 +29,10 @@ bool alarm = false;
 
 //Pins (GPIO Nummern entsprechen nicht Anschluessen)
 const int buzzer = 14; //D5
+const int CLK = D1; //Set the CLK pin connection to the display
+const int DIO = D2; //Set the DIO pin connection to the display
+
+TM1637Display display(CLK, DIO); //4-Digit Display.
 
 void updateTimeClient();
 
@@ -47,6 +53,8 @@ void setup() {
   digitalWrite(buzzer,LOW);
 
   tone(buzzer, 700, 500);
+
+  display.setBrightness(7); //set the diplay to maximum brightness
 }
 
 
@@ -55,6 +63,7 @@ void loop() {
   mqttClient.poll();   //Haelt die MQTT Verbindung aufrecht
   updateTimeClient();  //Laedt die Zeit regelmaeßig vom Server
   startAlarm();
+  setDisplay(timeClient.getHours(), timeClient.getMinutes());
 }
 
 
@@ -109,8 +118,18 @@ void onMqttMessage(int messageSize) {
     //Sendet Empfangsbestaetigung an Smartphone zurueck
     const char sendTopic[] = "wecker/weckzeitresponse";
     sendMqttMessage(sendTopic, "Daten erhalten!");
+    
+    //Signalton zur Bestätigung
     for(int i = 0; i < 30; i++){
       tone(buzzer, 300 + (20 * i), 100);
+    }
+    
+    //Wecker zeigt empfangende Zeit an
+    for(int i = 0; i < 5; i++){
+      setDisplay(weckstunde, weckminute);
+      delay(1000);
+      display.clear();
+      delay(1000);
     }
   }
   if (receivedTopic.equals(topicStopAlarm)) {
@@ -139,9 +158,10 @@ void updateTimeClient() {
   }
 }
 
-void display(int hours, int minutes) {
+void setDisplay(int hours, int minutes) {
   //TODO: Display Programmierung hinzufügen
-  //...
+  int time = (hours * 100) + minutes;
+  display.showNumberDecEx(time, 0b11100000, true, 4, 0);
 }
 
 
@@ -155,10 +175,11 @@ void startAlarm() {
       Serial.println("Alarm");
       tone(buzzer,700);
       delay(400);
+      display.clear();
       noTone(buzzer);
       delay(400);
 
-      display(timeClient.getHours(), timeClient.getMinutes());
+      setDisplay(timeClient.getHours(), timeClient.getMinutes());
       mqttClient.poll();
     }
     alarmDone = true;
