@@ -21,11 +21,17 @@ const char broker[] = "broker.hivemq.com";
 int port = 1883;
 const char topicWeckzeit[] = "wecker/weckzeit";
 const char topicStopAlarm[] = "wecker/stopAlarm";
+const char topicSettings[] = "wecker/settings";
 
 //Wecker-Attribute
 int weckminute = 0;
 int weckstunde = 0;
 bool alarm = false;
+
+bool dimDisplay = true;
+bool displayIsDimmed = false;
+int dimTime = 1929;
+int helligkeit = 7;
 
 //Pins (GPIO Nummern entsprechen nicht Anschluessen)
 const int buzzer = 14; //D5
@@ -43,6 +49,7 @@ void setup() {
   mqttSetup();
   mqttSubscribe(topicWeckzeit);
   mqttSubscribe(topicStopAlarm);
+  mqttSubscribe(topicSettings);
 
   timeClient.begin();
   timeClient.setTimeOffset(7200);
@@ -54,7 +61,7 @@ void setup() {
 
   tone(buzzer, 700, 500);
 
-  display.setBrightness(7); //set the diplay to maximum brightness
+  display.setBrightness(helligkeit); //set the diplay to maximum brightness
 }
 
 
@@ -116,7 +123,7 @@ void onMqttMessage(int messageSize) {
     weckminute = nachricht.substring(deviderIndex + 1).toInt();
 
     //Sendet Empfangsbestaetigung an Smartphone zurueck
-    const char sendTopic[] = "wecker/weckzeitresponse";
+    const char sendTopic[] = "wecker/response";
     sendMqttMessage(sendTopic, "Daten erhalten!");
     
     //Signalton zur Bestätigung
@@ -132,9 +139,26 @@ void onMqttMessage(int messageSize) {
       delay(1000);
     }
   }
+
   if (receivedTopic.equals(topicStopAlarm)) {
     alarm = false;
     Serial.println("Alarm gestopp!");
+  }
+
+  if(receivedTopic.equals(topicSettings)){
+    helligkeit = nachricht.substring(0).toInt();
+    display.setBrightness(helligkeit);
+    sendMqttMessage("wecker/response", "Settings erhalten");
+    tone(buzzer, 700, 500);
+
+    if(nachricht.length() > 1){
+      dimTime = nachricht.substring(2, nachricht.length()).toInt();
+      dimDisplay = true;
+    }
+    else {
+      dimDisplay = false;
+      displayIsDimmed = false;
+    }
   }
 }
 
@@ -161,7 +185,14 @@ void updateTimeClient() {
 void setDisplay(int hours, int minutes) {
   //TODO: Display Programmierung hinzufügen
   int time = (hours * 100) + minutes;
-  display.showNumberDecEx(time, 0b11100000, true, 4, 0);
+  if(!displayIsDimmed){
+    display.showNumberDecEx(time, 0b11100000, true, 4, 0);
+  }
+  if(dimDisplay && time == dimTime){
+    display.setBrightness(0);
+    display.clear();
+    displayIsDimmed = true;
+  }
 }
 
 
@@ -171,9 +202,11 @@ void startAlarm() {
   if (timeClient.getHours() == weckstunde && timeClient.getMinutes() == weckminute && !alarmDone) {
     alarm = true;
     Serial.println("Alarm gestartet...");
+    display.setBrightness(helligkeit);
+    displayIsDimmed = false;
     while (alarm) {
       Serial.println("Alarm");
-      tone(buzzer,700);
+      tone(buzzer,500);
       delay(400);
       display.clear();
       noTone(buzzer);

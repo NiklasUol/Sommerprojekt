@@ -27,7 +27,7 @@ import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 public class MainActivity extends AppCompatActivity {
 
     private Context appContext;
-    private MqttClient client;
+    public static MqttClient client;
     public static String brokerURL = "tcp://broker.hivemq.com:1883";
     public static String clientId = "Smartphone";
 
@@ -63,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
         statusfeld.setText("Warte auf Eingabe");
         statusfeld.setTextColor(Color.DKGRAY);
 
-        connectMqtt("wecker/weckzeitresponse");
+        connectMqtt("wecker/response");
 
         Button button = (Button) findViewById(R.id.button);
         button.setOnClickListener(new View.OnClickListener() {
@@ -93,7 +93,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onResume() {
-        connectMqtt("wecker/weckzeitresponse");
+        connectMqtt("wecker/response");
         super.onResume();
     }
 

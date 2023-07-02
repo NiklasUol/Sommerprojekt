@@ -8,12 +8,13 @@
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/textInputLayout"
-        android:layout_width="340dp"
+        android:layout_width="0dp"
         android:layout_height="55dp"
-        app:layout_constraintBottom_toTopOf="@+id/guideline3"
+        android:layout_marginStart="30dp"
+        android:layout_marginEnd="30dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toTopOf="@+id/guideline4">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/brokerInput"
@@ -27,7 +28,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.41" />
+        app:layout_constraintGuide_percent="0.7" />
 
     <Button
         android:id="@+id/saveButton"
@@ -40,8 +41,10 @@
         app:layout_constraintTop_toTopOf="@+id/guideline3" />
 
     <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="340dp"
+        android:layout_width="0dp"
         android:layout_height="55dp"
+        android:layout_marginStart="30dp"
+        android:layout_marginEnd="30dp"
         app:layout_constraintBottom_toTopOf="@+id/guideline3"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -53,5 +56,78 @@
             android:layout_height="wrap_content"
             android:hint="Port" />
     </com.google.android.material.textfield.TextInputLayout>
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline4"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.42" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline5"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.35" />
+
+    <SeekBar
+        android:id="@+id/helligkeitBar"
+        android:layout_width="0dp"
+        android:layout_height="34dp"
+        android:layout_marginStart="30dp"
+        android:layout_marginEnd="30dp"
+        android:max="7"
+        android:progress="7"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/helligkeitText" />
+
+    <TextView
+        android:id="@+id/helligkeitText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="30dp"
+        android:layout_marginTop="30dp"
+        android:layout_marginEnd="30dp"
+        android:text="Helligkeit:"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/schalfzeitText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="30dp"
+        android:layout_marginEnd="30dp"
+        android:text="Dimmung um 22 Uhr"
+        app:layout_constraintBottom_toTopOf="@+id/schlafzeitBar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <SeekBar
+        android:id="@+id/schlafzeitBar"
+        android:layout_width="0dp"
+        android:layout_height="34dp"
+        android:layout_marginStart="30dp"
+        android:layout_marginEnd="30dp"
+        android:max="24"
+        android:progress="22"
+        app:layout_constraintBottom_toTopOf="@+id/guideline5"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <Switch
+        android:id="@+id/dimmungSwitch"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="30dp"
+        android:layout_marginEnd="30dp"
+        android:text="Display ab einer bestimmten Uhrzeit ausschalten"
+        app:layout_constraintBottom_toTopOf="@+id/schalfzeitText"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/helligkeitBar" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
