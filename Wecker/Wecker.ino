@@ -30,7 +30,7 @@ bool alarm = false;
 
 bool dimDisplay = true;
 bool displayIsDimmed = false;
-int dimTime = 1929;
+int dimTime = 22; //22Uhr
 int helligkeit = 7;
 
 //Pins (GPIO Nummern entsprechen nicht Anschluessen)
@@ -82,6 +82,7 @@ void mqttSetup() {
   while (!mqttClient.connect(broker, port)) {
     Serial.print("MQTT Verbindung fehlgeschlagen! Error: ");
     Serial.println(mqttClient.connectError());
+    tone(buzzer, 100, 500);
     delay(2000);
   }
 
@@ -182,16 +183,23 @@ void updateTimeClient() {
   }
 }
 
+bool dimDone = false;
+
 void setDisplay(int hours, int minutes) {
   //TODO: Display Programmierung hinzufügen
   int time = (hours * 100) + minutes;
   if(!displayIsDimmed){
     display.showNumberDecEx(time, 0b11100000, true, 4, 0);
-  }
-  if(dimDisplay && time == dimTime){
+    if(!dimDone && dimDisplay && hours == dimTime){
     display.setBrightness(0);
     display.clear();
     displayIsDimmed = true;
+    dimDone = true;
+    }
+  }
+
+  if(dimDone && dimTime != hours){
+    dimDone = false;
   }
 }
 
