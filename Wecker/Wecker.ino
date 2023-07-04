@@ -4,7 +4,9 @@
 #include <WiFiUdp.h>
 #include <NTPClient.h>
 
-#include <TM1637Display.h>
+#include <Wire.h> // Enable this line if using Arduino Uno, Mega, etc.
+#include <Adafruit_GFX.h>
+#include "Adafruit_LEDBackpack.h"
 
 WiFiManager wifiManager;
 WiFiClient client;
@@ -38,12 +40,16 @@ const int buzzer = 14; //D5
 const int CLK = D1; //Set the CLK pin connection to the display
 const int DIO = D2; //Set the DIO pin connection to the display
 
-TM1637Display display(CLK, DIO); //4-Digit Display.
+Adafruit_7segment display = Adafruit_7segment();
 
 void updateTimeClient();
 
 void setup() {
   Serial.begin(115200);
+  display.begin(0x70);
+  display.print("STAR");
+  display.setBrightness(helligkeit); //set the diplay to maximum brightness
+  display.writeDisplay();
   wifiManager.autoConnect("Wecker");
 
   mqttSetup();
@@ -60,8 +66,6 @@ void setup() {
   digitalWrite(buzzer,LOW);
 
   tone(buzzer, 700, 500);
-
-  display.setBrightness(helligkeit); //set the diplay to maximum brightness
 }
 
 
@@ -137,6 +141,7 @@ void onMqttMessage(int messageSize) {
       setDisplay(weckstunde, weckminute);
       delay(1000);
       display.clear();
+      display.writeDisplay();
       delay(1000);
     }
   }
@@ -147,8 +152,9 @@ void onMqttMessage(int messageSize) {
   }
 
   if(receivedTopic.equals(topicSettings)){
-    helligkeit = nachricht.substring(0).toInt();
+    helligkeit = 15* (1 / nachricht.substring(0).toInt());
     display.setBrightness(helligkeit);
+    display.writeDisplay();
     sendMqttMessage("wecker/response", "Settings erhalten");
     tone(buzzer, 700, 500);
 
@@ -189,13 +195,14 @@ void setDisplay(int hours, int minutes) {
   //TODO: Display Programmierung hinzufügen
   int time = (hours * 100) + minutes;
   if(!displayIsDimmed){
-    display.showNumberDecEx(time, 0b11100000, true, 4, 0);
+    display.print(time);
     if(!dimDone && dimDisplay && hours == dimTime){
     display.setBrightness(0);
     display.clear();
     displayIsDimmed = true;
     dimDone = true;
     }
+    display.writeDisplay();
   }
 
   if(dimDone && dimTime != hours){
@@ -211,12 +218,14 @@ void startAlarm() {
     alarm = true;
     Serial.println("Alarm gestartet...");
     display.setBrightness(helligkeit);
+    display.writeDisplay();
     displayIsDimmed = false;
     while (alarm) {
       Serial.println("Alarm");
       tone(buzzer,500);
       delay(400);
       display.clear();
+      display.writeDisplay();
       noTone(buzzer);
       delay(400);
 
