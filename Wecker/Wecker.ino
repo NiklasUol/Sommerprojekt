@@ -4,7 +4,8 @@
 #include <WiFiUdp.h>
 #include <NTPClient.h>
 
-#include <Wire.h> // Enable this line if using Arduino Uno, Mega, etc.
+//Display
+#include <Wire.h>
 #include <Adafruit_GFX.h>
 #include "Adafruit_LEDBackpack.h"
 
@@ -33,7 +34,7 @@ bool alarm = false;
 bool dimDisplay = true;
 bool displayIsDimmed = false;
 int dimTime = 22; //22Uhr
-int helligkeit = 7;
+int helligkeit = 15;
 
 //Pins (GPIO Nummern entsprechen nicht Anschluessen)
 const int buzzer = 14; //D5
@@ -47,7 +48,8 @@ void updateTimeClient();
 void setup() {
   Serial.begin(115200);
   display.begin(0x70);
-  display.print("STAR");
+  display.print("LOAd");
+  display.blinkRate(3);
   display.setBrightness(helligkeit); //set the diplay to maximum brightness
   display.writeDisplay();
   wifiManager.autoConnect("Wecker");
@@ -66,6 +68,9 @@ void setup() {
   digitalWrite(buzzer,LOW);
 
   tone(buzzer, 700, 500);
+
+  display.blinkRate(0);
+  display.writeDisplay();
 }
 
 
@@ -152,7 +157,13 @@ void onMqttMessage(int messageSize) {
   }
 
   if(receivedTopic.equals(topicSettings)){
-    helligkeit = 15* (1 / nachricht.substring(0).toInt());
+    int receivedHelligkeit = nachricht.substring(0).toInt();
+    if(receivedHelligkeit == 0){
+      helligkeit = 0;
+    }
+    else{
+      helligkeit = receivedHelligkeit * 2 + 1;
+    }
     display.setBrightness(helligkeit);
     display.writeDisplay();
     sendMqttMessage("wecker/response", "Settings erhalten");
@@ -196,7 +207,8 @@ void setDisplay(int hours, int minutes) {
   int time = (hours * 100) + minutes;
   if(!displayIsDimmed){
     display.print(time);
-    if(!dimDone && dimDisplay && hours == dimTime){
+    display.drawColon(true);
+    if(!dimDone && dimDisplay && timeClient.getHours() == dimTime){
     display.setBrightness(0);
     display.clear();
     displayIsDimmed = true;
