@@ -31,7 +31,7 @@ int weckminute = 0;
 int weckstunde = 0;
 bool alarm = false;
 
-bool dimDisplay = true;
+bool dimDisplay = false;
 bool displayIsDimmed = false;
 int dimTime = 22; //22Uhr
 int helligkeit = 15;
@@ -78,8 +78,9 @@ void setup() {
 void loop() {
   mqttClient.poll();   //Haelt die MQTT Verbindung aufrecht
   updateTimeClient();  //Laedt die Zeit regelmaeßig vom Server
-  startAlarm();
-  setDisplay(timeClient.getHours(), timeClient.getMinutes());
+  startAlarm();        //Startet Alarm, wenn die Weckzeit stimmt
+  setDisplay(timeClient.getHours(), timeClient.getMinutes()); //Zeitanzeige
+  mqttReconnector();  //Stellt Verbindung wieder her, wenn der Wecker vom Broker getrennt wurde
 }
 
 
@@ -92,6 +93,8 @@ void mqttSetup() {
     Serial.print("MQTT Verbindung fehlgeschlagen! Error: ");
     Serial.println(mqttClient.connectError());
     tone(buzzer, 100, 500);
+    display.print("NOCO");
+    display.writeDisplay();
     delay(2000);
   }
 
@@ -99,6 +102,21 @@ void mqttSetup() {
   Serial.println();
 
   mqttClient.onMessage(onMqttMessage);
+}
+
+void mqttReconnector(){
+  if(!mqttClient.connected()){
+    Serial.println("MQTT Verbindung fehlgeschlagen! Versuche Verbindung wiederherzustellen...");
+    if(mqttClient.connect(broker, port)){
+      Serial.println("MQTT Verbindung wiederhergestellt");
+      mqttClient.onMessage(onMqttMessage);
+    }
+    else{
+      Serial.print("Konnte MQTT Verbindung nicht wiederherstellen. Error: ");
+      Serial.println(mqttClient.connectError());
+      delay(2000);
+    }
+  }
 }
 
 void mqttSubscribe(const char topic[]) {
