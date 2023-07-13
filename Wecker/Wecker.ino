@@ -80,7 +80,7 @@ void loop() {
   updateTimeClient();  //Laedt die Zeit regelmaeßig vom Server
   startAlarm();        //Startet Alarm, wenn die Weckzeit stimmt
   setDisplay(timeClient.getHours(), timeClient.getMinutes()); //Zeitanzeige
-  mqttReconnector();  //Stellt Verbindung wieder her, wenn der Wecker vom Broker getrennt wurde
+ // mqttReconnector();  //Stellt Verbindung wieder her, wenn der Wecker vom Broker getrennt wurde
 }
 
 
