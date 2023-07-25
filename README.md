@@ -13,7 +13,10 @@ HOW USERS CAN GET STARTED WITH THE PROJECT
 
 WHO MAINTAINS AND CONTRIBUTES TO THE PROJECT & WHERE CAN I GET HELP ?
   This project was created an is maintained by Renke Beckmann, Minh Duc Pham, Niklas Schmidt and Jan von Garrel. 
-  If you have any questions on this feel free to wirte us a mail at "plantstone98@gmail.com".
+  If you have any questions on this feel free to wirte us a mail at 
+  
+  
+  "plantstone98@gmail.com".
 ---------------------------------------------------------
 
 
